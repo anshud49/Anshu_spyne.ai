@@ -41,15 +41,19 @@ class CarModelSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = CarModel
-        fields = ['id', 'car_name', 'description', 'tags', 'title', 'car_type', 'company', 'dealer', 'logo_url', 'images', 'user']
+        fields = ['id', 'car_name', 'description', 'tags', 'title', 'car_type', 'company', 'dealer', 'logo_url', 'images', 'user','public']
 
     def validate_car_name(self, value):
-       
+        user = self.context['request'].user 
         car_instance = self.instance
+
+       
         if car_instance and car_instance.car_name == value:
             return value  
-        
-        if CarModel.objects.filter(car_name=value).exists():
-            raise serializers.ValidationError("A car model with this name already exists.")
+
+       
+        if CarModel.objects.filter(car_name=value, user=user).exists():
+            raise serializers.ValidationError("You already have a car with this name.")
         
         return value
+

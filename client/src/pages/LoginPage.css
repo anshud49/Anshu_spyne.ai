@@ -24,7 +24,9 @@ body {
   display: flex;
   justify-content: center;
   align-items: center;
-  width: 800px;
+  width: 100%;
+  max-width: 1000px;
+  padding: 10px;
   overflow: auto;
 }
 
@@ -39,10 +41,10 @@ body {
   border-radius: 8px;
   margin-top: 20px;
   padding-top: 40px;
-  max-width: 450px;
-  width: 90%;
+  width: 100%;
+  max-width: 550px;
+  height: auto;
   overflow: auto;
-  height: 650px;
 }
 
 form {
@@ -52,14 +54,15 @@ form {
 }
 
 .site-logo {
-  height: 50px;
-  margin-bottom: 40px;
+  height: 80px;
+  background-color: white;
+  margin-bottom: 20px;
 }
 
 .input-ele-container {
   display: flex;
   flex-direction: column;
-  margin-bottom: 20px;
+  margin-bottom: 15px;
 }
 
 .password-container {
@@ -75,14 +78,14 @@ form {
 .pass-container a {
   font-size: 13px;
   text-decoration: none;
-  color: #685cff;
+  color: #ab2c2c;
 }
 
 .toggle-password {
   position: absolute;
-  top: 50%;
-  right: 16px;
-  transform: translate(-50%);
+  top: 69%;
+  right: 0px;
+  transform: translate(-50%, -50%);
   cursor: pointer;
   font-size: 18px;
   color: #aaa;
@@ -107,7 +110,7 @@ form {
   height: 48px;
   border-radius: 6px;
   border: none;
-  background-color: #685cff;
+  background-color: #ab2c2c;
   color: white;
   font-weight: 600;
   cursor: pointer;
@@ -115,7 +118,7 @@ form {
 }
 
 .login-button:hover {
-  background-color: #594ddc;
+  background-color: #8a2323;
 }
 
 .or-container {
@@ -156,12 +159,12 @@ form {
 }
 
 .newaccount {
-  margin-top: 20px;
+  margin-top: 15px;
 }
 
 .newaccount a {
   text-decoration: none;
-  color: #685cff;
+  color: #ab2c2c;
   font-weight: 500;
 }
 
@@ -170,4 +173,61 @@ form {
   font-size: 14px;
   margin-top: 10px;
   text-align: center;
+}
+
+
+@media (max-width: 768px) {
+  body {
+    padding-top: 30px;
+  }
+
+  .inner-container {
+    width: 100%;
+    padding: 20px;
+    margin-top: 10px;
+    border-radius: 6px;
+  }
+  .toggle-password {
+    top: 72%;
+    font-size: 20px;
+  }
+
+  .site-logo {
+    height: 60px;
+    margin-bottom: 10px;
+  }
+
+  .text-input {
+    height: 42px;
+    padding: 10px;
+    font-size: 13px;
+  }
+
+  .login-button,
+  .google-button {
+    height: 42px;
+    font-size: 13px;
+  }
+
+  .or-text {
+    font-size: 12px;
+  }
+
+  .pass-container a {
+    font-size: 12px;
+  }
+
+  .toggle-password {
+    font-size: 16px;
+  }
+
+  .error-message {
+    font-size: 13px;
+  }
+}
+.description
+{
+  text-align: center;
+  margin-top: 5px;
+  margin-bottom: 30px;
 }

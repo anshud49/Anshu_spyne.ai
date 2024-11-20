@@ -1,13 +1,55 @@
 from rest_framework import viewsets, status, serializers
 from rest_framework.response import Response
-from rest_framework.decorators import action
+from rest_framework.decorators import action, api_view
 from .models import CarModel, CarImage
 from .serializers import CarModelSerializer, CarImageSerializer, UserRegistrationSerializer,LoginSerializer
 from rest_framework import generics
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth import authenticate
-from rest_framework.permissions import IsAuthenticated, AllowAny
+from rest_framework.permissions import IsAuthenticated, AllowAny,IsAuthenticatedOrReadOnly
+from django.contrib.auth.models import AnonymousUser
 from django.views.decorators.csrf import csrf_exempt
+from django.shortcuts import render
+from google.auth.transport.requests import Request
+from google.oauth2 import id_token
+from django.contrib.auth.models import User
+from rest_framework.permissions import AllowAny
+from rest_framework.decorators import permission_classes
+
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def google_login(request):
+    token = request.data.get('token')
+    if not token:
+        return Response({'error': 'Token is required'}, status=400)
+
+    try:
+        idinfo = id_token.verify_oauth2_token(token, Request(), '77147079337-el3d08s5o5h305bcj27me9iv5qjddiu7.apps.googleusercontent.com')
+        email = idinfo['email']
+        name = idinfo.get('name', '')
+
+        user, created = User.objects.get_or_create(email=email, defaults={'username': email})
+
+        if created:
+            user.username = email
+            user.first_name = name  
+            user.save()
+
+        refresh = RefreshToken.for_user(user)
+        return Response({
+            'access': str(refresh.access_token),
+            'refresh': str(refresh)
+        })
+
+    except ValueError:
+        return Response({'error': 'Invalid Google token'}, status=400)
+    except Exception as e:
+        return Response({'error': str(e)}, status=400)
+
+
+def Docs(request):
+    return render(request, 'docs.html')
 
 class UserRegistrationView(generics.CreateAPIView):
     permission_classes = [AllowAny]
@@ -16,10 +58,9 @@ class UserRegistrationView(generics.CreateAPIView):
 
 class UserLoginView(generics.GenericAPIView):
     permission_classes = [AllowAny]
-    serializer_class = LoginSerializer  # Add the serializer class here
+    serializer_class = LoginSerializer  
 
     def post(self, request, *args, **kwargs):
-        # Validate and deserialize the input data
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
@@ -28,7 +69,6 @@ class UserLoginView(generics.GenericAPIView):
 
         user = authenticate(username=username, password=password)
         if user:
-            # Generate JWT tokens
             refresh = RefreshToken.for_user(user)
             return Response({
                 'refresh': str(refresh),
@@ -61,29 +101,38 @@ class UserLogoutView(generics.GenericAPIView):
 class CarModelViewSet(viewsets.ModelViewSet):
     queryset = CarModel.objects.all()
     serializer_class = CarModelSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes=[IsAuthenticatedOrReadOnly]
 
     def get_queryset(self):
-        return CarModel.objects.filter(user=self.request.user)
+        user = self.request.user
+        
+        if isinstance(user, AnonymousUser):
+            return CarModel.objects.filter(public=True)
+
+        is_logged_in = self.request.query_params.get("isLoggedin", None)
+
+        if is_logged_in is not None:
+            if is_logged_in.lower() == "true":
+                return CarModel.objects.filter(public=True).exclude(user=user)
+        else:
+            return CarModel.objects.filter(user=user)
+
 
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
 
     def create(self, request, *args, **kwargs):
         images_data = request.data.get('images', [])
-        logo_url = request.data.get('logo_url', None)  
-        
-      
+        logo_url = request.data.get('logo_url', None)
+
         car_serializer = self.get_serializer(data=request.data)
         car_serializer.is_valid(raise_exception=True)
         car = car_serializer.save()
 
-       
         if logo_url:
             car.logo_url = logo_url
             car.save()
 
-       
         if images_data:
             for image_url in images_data[:10]: 
                 CarImage.objects.create(car=car, image_url=image_url, user=request.user)
@@ -105,7 +154,7 @@ class CarModelViewSet(viewsets.ModelViewSet):
             car.save()
 
         if images_data:
-            car.images.all().delete()  
+            car.images.all().delete()
             for image_url in images_data[:10]:
                 CarImage.objects.create(car=car, image_url=image_url, user=request.user)
 
@@ -116,7 +165,7 @@ class CarModelViewSet(viewsets.ModelViewSet):
         instance = self.get_object()
         images_data = request.data.get('images', [])
         logo_url = request.data.get('logo_url', None)
-        
+
         car_serializer = self.get_serializer(instance, data=request.data, partial=True)
         car_serializer.is_valid(raise_exception=True)
         car = car_serializer.save()
@@ -126,7 +175,7 @@ class CarModelViewSet(viewsets.ModelViewSet):
             car.save()
 
         if images_data:
-            car.images.all().delete()  
+            car.images.all().delete()
             for image_url in images_data[:10]:
                 CarImage.objects.create(car=car, image_url=image_url, user=request.user)
 

@@ -1,8 +1,3 @@
-Demonstration link: https://youtu.be/AEm3pnbyxMs?si=ZA0TY3dhFAniSAxd
-Frontend- https://cars-holic.vercel.app/
-Backend - https://carsholic.vercel.app/api/
-
-
 # Django Car Details API
 
 This project is a Django REST API for managing car details, including car models. The project includes a `cardetails` app and a main `api` module to handle endpoints. This README covers the project setup, file structure, available API endpoints, and JWT authentication.
@@ -128,9 +123,13 @@ pip install -r requirements.txt
 - *POST /api/login/*: Authenticate and login a user.
 - *POST /api/logout/*: Logout the user by invalidating the JWT token.
 
+### Car Model Endpoints(If user is not authenticated)
+- **List all public car models**: `GET /api/cars/`
+
 ### Car Model Endpoints(user must be authenticated)
 
-- **List all car models**: `GET /api/cars/`
+- **List all car models created by the user**: `GET /api/cars/`
+- **List all car models except the models which are created by the user**: `GET /api/cars/isLoggedin=true`
 - **Retrieve car model**: `GET /api/cars/<id>/`
 - **Update a car model (full update)**: `PUT /api/cars/<id>/`
 - **Partially update a car model (partial update)**: `PATCH /api/cars/<id>/`

@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import '../App.css'
+import '../App.css';
 
-export default function PostPage() {
+export default function Explore() {
   const [cars, setCars] = useState([]);
   const [display, setDisplay] = useState([]);
   const [search, setSearch] = useState('');
@@ -11,42 +11,47 @@ export default function PostPage() {
 
   useEffect(() => {
     const fetchCars = async () => {
-      const accessToken = localStorage.getItem('access_token');
-
-      if (!accessToken) {
-        navigate('/login');
-        return;
-      }
-
       if (!navigator.onLine) {
         setError('No internet connection. Please check your network and try again.');
         return;
       }
 
       try {
-        const response = await fetch('https://carsholic.vercel.app/api/cars/', {
-          headers: {
-            'Authorization': `Bearer ${accessToken}`,
-          },
-        });
+        
+        const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
+        const token = localStorage.getItem('access_token');
 
-        if (response.status === 401) {
-          navigate('/login');
+        
+        let apiUrl = 'https://carsholic.vercel.app/api/cars/';
+
+        if (isLoggedIn) {
+          apiUrl += `?isLoggedin=true`;
+        }
+
+      
+        const options = {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(isLoggedIn && token && { Authorization: `Bearer ${token}` }), // Add token header if logged in
+          },
+        };
+
+        const response = await fetch(apiUrl, options);
+
+        if (!response.ok) {
+          setError('Failed to fetch car data. Please try again later.');
           return;
         }
 
         const carData = await response.json();
 
         if (!carData || carData.length === 0) {
-          setTimeout(() => {
-            navigate('/create');
-          }, 2000);
+          setError('No cars available to explore.');
         } else {
           setCars(carData);
           setDisplay(carData);
         }
-
-        localStorage.setItem('isLoggedIn', 'true');
       } catch (error) {
         console.error('Error fetching cars:', error);
         setError('Failed to fetch car data. Please try again later.');
@@ -54,33 +59,7 @@ export default function PostPage() {
     };
 
     fetchCars();
-  }, [navigate]);
-
-  const handleDelete = async (carId) => {
-    const accessToken = localStorage.getItem('access_token');
-    if (!accessToken) {
-      navigate('/login');
-      return;
-    }
-
-    try {
-      const response = await fetch(`https://carsholic.vercel.app/api/cars/${carId}/`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${accessToken}`,
-        },
-      });
-
-      if (response.ok) {
-        setCars(cars.filter(car => car.id !== carId));
-        setDisplay(display.filter(car => car.id !== carId));
-      } else {
-        console.error('Error deleting car');
-      }
-    } catch (error) {
-      console.error('Error deleting car:', error);
-    }
-  };
+  }, []);
 
   if (error) return <p>{error}</p>;
   if (!cars.length) return <p>Loading...</p>;
@@ -115,7 +94,7 @@ export default function PostPage() {
           <h1>{car.car_name}</h1>
           <h2>{car.title}</h2>
           <div className="description">
-            <p >{car.description}</p>
+            <p>{car.description}</p>
           </div>
           <div className="car-details">
             <p><strong>Type:</strong> {car.car_type}</p>
@@ -124,14 +103,9 @@ export default function PostPage() {
             <p><strong>Tags:</strong> {car.tags}</p>
           </div>
           <div className="car-images">
-            {car.images && car.images.length > 0 && car.images.map(image => (
-                <img src={image.image_url} alt={`Car Image`} />
+            {car.images && car.images.length > 0 && car.images.map((image) => (
+              <img src={image.image_url} alt={`Car Image`} key={image.image_url} />
             ))}
-          </div>
-
-          <div className="car-actions">
-            <button onClick={() => navigate(`/edit/${car.id}`)}>Edit</button>
-            <button onClick={() => handleDelete(car.id)}>Delete</button>
           </div>
         </div>
       ))}
